@@ -1,0 +1,39 @@
+.h2{
+    text-align: center;
+    color: #5080b3;
+}
+#login-btn{
+    align: center middle
+}
+.btn-container {
+    width: 100%;
+    align: center top/* horizontal centering */
+}
+#status{
+    text-align: center;
+}
+#code-display{
+    padding-top: 1;
+    text-align: center;
+}
+#username{
+    text-align: right;
+    color: #5080b3;
+    padding-bottom: 1;
+}
+#instruction, .instruction{
+    color: #a0a0a0;
+    text-align: center;
+}
+#title{
+    color: #e24048;
+    text-align: center;
+}
+#repo-select-container{
+    width: 100%;
+    text-align: center;
+    align: center top;
+}
+.file_list{
+    text-align: center;
+}

@@ -1,5 +1,5 @@
 from textual.app import App
-from textual.containers import Horizontal, Vertical
+from textual.containers import Horizontal, Vertical, Container
 from textual.widgets import Static, Input, OptionList, DirectoryTree, Footer, LoadingIndicator, Button, TextArea
 from textual.widget import Widget
 from textual.widgets.option_list import Option
@@ -27,13 +27,16 @@ SCOPE = "repo"  # adjust as needed
 service_name = "mt-notes"
 username = "user"
 class NotesApp(App):
+    CSS_PATH="mt.css"
     def code_update(self, text):
         self.call_from_thread(self.code_display.update, text)
 
     def status_update(self, text):
         self.call_from_thread(self.status.update, text)
     async def _mount_copy_coroutine(self):
-        await self.mount(self.copy_code)
+        logging.info("testing")
+        await self.mount(Horizontal(self.copy_code, classes="btn-container"))
+        self.copy_code.focus()
 
     def mount_copy_button(self):
         self.call_from_thread(lambda: self.call_later(self._mount_copy_coroutine))
@@ -100,6 +103,7 @@ class NotesApp(App):
             self.token = token_data["access_token"]
             keyring.set_password("mt-notes", "user", self.token)
             # self.status_update(f"Login complete! Access token:\n{self.token}")
+            self.call_from_thread(lambda: self.call_later(self.action_restart))
             return 
     async def delete_file(self, owner, repo, path, branch="main", token=None, message="Delete file"):
         if not token:
@@ -271,6 +275,7 @@ class NotesApp(App):
         else:
             self.select_instruction.update(str(file_path) + "*")
         self.mount(self.file_textarea)
+        self.file_textarea.focus()
         logging.info(file_path)
         contents = await self.read_file(self.token, self.logged_in_as, self.repo, file_path)
         self.original_contents = contents
@@ -349,7 +354,8 @@ class NotesApp(App):
             Binding(key="ctrl+n", action="new_file", description="New file", key_display="^n"),
             Binding(key="ctrl+s", action="save_file", description="Save the file opened", key_display="^s"),
             Binding(key="delete", action="delete_file", description="Delete highlighted file", key_display="del"),
-            Binding(key="ctrl+m", action="go_home", description="Main menu", key_display="^m")
+            Binding(key="ctrl+m", action="go_home", description="Main menu", key_display="^m"),
+            Binding(key="ctrl+l", action="logout", description="Logout", key_display="^l")
     ]
     async def on_mount(self) -> None:
         logging.info("App loaded")
@@ -375,29 +381,31 @@ class NotesApp(App):
 
 
 
-""")
+""", id="title")
         self.mount(self.title_element)
+        logging.info(logged_in)
         if not logged_in:
             self.login_prompt = Static("Login with github to start taking notes!", classes="h2")
             self.auth_button = Button("Login", id="login-btn")
             self.code_display = Static("", id="code-display")
             self.status = Static("", id="status")
-            self.mount(self.login_prompt, self.auth_button, self.code_display, self.status)
+            self.mount(self.login_prompt, self.code_display, self.status)
+            self.mount(Horizontal(self.auth_button, classes="btn-container"))
             self.copy_code = Button("Copy code", id="copy-btn")
-        
-        headers = {
-            "Authorization": f"Bearer {self.token}",
-            "Accept": "application/json"
-        }
-        res = requests.get("https://api.github.com/user", headers=headers)
-        logged_in_as = res.json()["login"]
-        self.logged_in_as = logged_in_as
-        self.username = Static(f"Logged in as: {logged_in_as}", id="username")
-        self.mount(self.username)
-        self.instruction = Static("Please select the repo you wish to store notes (recommended private)", id="instruction")
-        self.mount(self.instruction)
-        self.select_repo = Input(placeholder="my-notes-repo", id="repo-select-input")
-        self.mount(self.select_repo)
+        else:
+            headers = {
+                "Authorization": f"Bearer {self.token}",
+                "Accept": "application/json"
+            }
+            res = requests.get("https://api.github.com/user", headers=headers)
+            logged_in_as = res.json()["login"]
+            self.logged_in_as = logged_in_as
+            self.username = Static(f"Logged in as: {logged_in_as}", id="username")
+            self.mount(self.username)
+            self.instruction = Static("Please select the repo you wish to store notes (recommended private)", id="instruction")
+            self.mount(self.instruction)
+            self.select_repo = Horizontal(Input(placeholder="my-notes-repo", id="repo-select-input"), id="repo-select-container")
+            self.mount(self.select_repo)
     async def on_input_submitted(self, event: Input.Submitted):
         if event.input.id=="repo-select-input":
             logging.info("Repo selected: " + event.input.value)
@@ -516,6 +524,12 @@ class NotesApp(App):
 
 
 
+    async def action_logout(self):
+        try:
+            keyring.delete_password(service_name, username)
+        except Exception as e:
+            logging.info(f"Failed to delete token from keyring: {e}")
+        await self.action_restart()
 
     async def action_new_file(self):
         self.mount(self.file_name_input)
@@ -525,7 +539,8 @@ class NotesApp(App):
         await self.refresh_files(self.file_list)
     async def on_button_pressed(self, event: Button.Pressed):
         if event.button.id == "login-btn":
-            self.auth_button.disabled = True
+            self.auth_button.remove()
+            # self.auth_button.disabled = True
             threading.Thread(target=self.github_device_flow, daemon=True).start()
         if event.button.id == "copy-btn":
             pyperclip.copy(self.user_code)
