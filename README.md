@@ -2,14 +2,6 @@
 
 TUI based text editor that saves notes onto a users github repo to keep the local filesystem empty (mt) 
 
-
-
-
-## Authors
-
-- [@mystyy01](https://github.com/mystyy01)
-
-
 ## Installation
 
 Install mt-notes
@@ -29,3 +21,8 @@ pip install -r requirements.txt
 ## Requirements
 
 Python>=3 (developed on Python 3.13.11)
+
+## Authors
+
+- [@mystyy01](https://github.com/mystyy01)
+
