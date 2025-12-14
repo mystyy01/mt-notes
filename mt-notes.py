@@ -356,8 +356,7 @@ class NotesApp(App):
         # define all components
 
         token = keyring.get_password(service_name, username)
-        
-        logging.info(token)
+    
         if token:
             logged_in = True
             self.token = token
