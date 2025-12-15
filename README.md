@@ -21,6 +21,7 @@ pip install -r requirements.txt
 ## Requirements
 
 Python>=3 (developed on Python 3.13.11)
+git
 
 ## Authors
 
