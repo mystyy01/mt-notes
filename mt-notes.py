@@ -404,9 +404,15 @@ class NotesApp(App):
             self.mount(self.username)
             self.instruction = Static("Please select the repo you wish to store notes (recommended private)", id="instruction")
             self.mount(self.instruction)
-            self.select_repo_horizontal = Horizontal(Input(placeholder="my-notes-repo", id="repo-select-input"), id="repo-select-container")
-            self.select_repo = self.select_repo_horizontal.children[0]
-            self.mount(self.select_repo)
+            # Give the Input an id
+            self.select_repo_horizontal = Horizontal(
+                Input(placeholder="my-notes-repo", id="repo-select-input"),
+                id="repo-select-container"
+            )
+            
+            self.mount(self.select_repo_horizontal)
+            # Later, after mounting
+            self.select_repo = self.query_one("#repo-select-input", Input)
     async def on_input_submitted(self, event: Input.Submitted):
         if event.input.id=="repo-select-input":
             logging.info("Repo selected: " + event.input.value)
